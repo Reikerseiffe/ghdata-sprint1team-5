@@ -74,7 +74,7 @@ class GHTorrent(object):
         stargazersSQL = s.sql.text(self.__single_table_count_by_date('watchers', 'repo_id'))
         return pd.read_sql(stargazersSQL, self.db, params={"repoid": str(repoid)})
 
-    def qcommits(self, repoid):
+    def commits(self, repoid):
         """
         Timeseries of all the commits on a repo
 
@@ -328,7 +328,7 @@ class GHTorrent(object):
 
         return pd.read_sql(pullAcceptanceSQL, self.db, params={"repoid": str(repoid)})
 
-    def commits(self, repoid):
+    def qcommits(self, repoid):
         """
         Timeseries of all the commits on a repo
 
