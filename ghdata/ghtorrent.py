@@ -328,7 +328,7 @@ class GHTorrent(object):
 
         return pd.read_sql(pullAcceptanceSQL, self.db, params={"repoid": str(repoid)})
 
-    def qcommits(self, repoid):
+    def contributor_breadth(self, repoid):
         """
         Timeseries of all the commits on a repo
 

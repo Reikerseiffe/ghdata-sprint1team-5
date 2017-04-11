@@ -103,6 +103,22 @@ GHDataReport.prototype.buildReport = function () {
         target: '#pulls-over-time'
       });
     });
+
+    //contributor_breadth
+    this.api.commitsByWeek().then(function (commits) {
+      MG.data_graphic({
+        title: "contributor_breadth/Week",
+        data: MG.convert.date(contributor_breadth, 'date', '%Y-%m-%dT%H:%M:%S.%LZ'),
+        chart_type: 'point',
+        least_squares: true,
+        full_width: true,
+        height: 300,
+        color_range: ['#aaa'],
+        x_accessor: 'date',
+        y_accessor: 'contributor_breadth',
+        target: '#contributor_breadth-over-time'
+      });
+    });
   }
 };
 
