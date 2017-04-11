@@ -335,16 +335,5 @@ class GHTorrent(object):
         :param repoid: The id of the project in the projects table. Use repoid() to get this.
         :return: DataFrame with commits/day
         """
-        contributor_breadthSQL = s.sql.text("""
-
-            select count(commits.id) as num_commits, projects.name as project_name, projects.url as url
-            from
-            commits
-            join projects on commits.project_id = projects.id
-            join users on users.id = commits.author_id
-            where (projects.id, users.id) not in
-            	(select repo_id, user_id from project_members)
-            group by projects.id
-
-        """)
+        contributor_breadthSQL = s.sql.text(self.__single_table_count_by_date('commits'))
         return pd.read_sql(contributor_breadthSQL, self.db, params={"repoid": str(repoid)})
