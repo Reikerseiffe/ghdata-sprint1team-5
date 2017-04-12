@@ -104,10 +104,27 @@ GHDataReport.prototype.buildReport = function () {
       });
     });
 
-    //contributor_breadth
-    this.api.commitsByWeek().then(function (commits) {
+
+    //community_activity
+    this.api.community_activity().then(function (community_activity) {
       MG.data_graphic({
-        title: "contributor_breadth/Week",
+        title: "Community Activity/Week",
+        data: MG.convert.date(community_activity, 'date', '%Y-%m-%dT%H:%M:%S.%LZ'),
+        chart_type: 'point',
+        least_squares: true,
+        full_width: true,
+        height: 300,
+        color_range: ['#aaa'],
+        x_accessor: 'date',
+        y_accessor: 'total',
+        target: '#community_activity-over-time'
+      });
+    });
+
+    //contributor_breadth
+    this.api.contributor_breadth().then(function (contributor_breadth) {
+      MG.data_graphic({
+        title: "Contributor Breadth/Week",
         data: MG.convert.date(contributor_breadth, 'date', '%Y-%m-%dT%H:%M:%S.%LZ'),
         chart_type: 'point',
         least_squares: true,
@@ -115,11 +132,12 @@ GHDataReport.prototype.buildReport = function () {
         height: 300,
         color_range: ['#aaa'],
         x_accessor: 'date',
-        y_accessor: 'contributor_breadth',
+        y_accessor: 'ratio',
         target: '#contributor_breadth-over-time'
       });
     });
   }
 };
+
 
 var client = new GHDataReport();

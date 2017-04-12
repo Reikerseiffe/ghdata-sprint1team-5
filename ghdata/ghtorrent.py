@@ -328,12 +328,116 @@ class GHTorrent(object):
 
         return pd.read_sql(pullAcceptanceSQL, self.db, params={"repoid": str(repoid)})
 
+
+    def community_activity(self, repoid, userid=None):
+        """
+        Timeseries of all the contributions to a project, optionally limited to a specific user
+
+        :param repoid: The id of the project in the projects table.
+        :param userid: The id of user if you want to limit the contributions to a specific user.
+        :return: DataFrame with all of the contributions seperated by day.
+        """
+        rawContributionsSQL = """
+            SELECT  DATE(coms.created_at) as "date",
+                    coms.count            as "commits",
+                    pulls.count           as "pull_requests",
+                    iss.count             as "issues",
+                    comcoms.count         as "commit_comments",
+                    pullscoms.count       as "pull_request_comments",
+                    isscoms.count         as "issue_comments",
+                    coms.count + pulls.count + iss.count + comcoms.count + pullscoms.count + isscoms.count as "total"
+
+            FROM (SELECT created_at AS created_at, COUNT(*) AS count FROM commits INNER JOIN project_commits ON project_commits.commit_id = commits.id WHERE project_commits.project_id = :repoid[[ AND commits.author_id = :userid]] GROUP BY DATE(created_at)) coms
+
+            LEFT JOIN (SELECT pull_request_history.created_at AS created_at, COUNT(*) AS count FROM pull_request_history JOIN pull_requests ON pull_requests.id = pull_request_history.pull_request_id WHERE pull_requests.base_repo_id = :repoid AND pull_request_history.action = 'merged'[[ AND pull_request_history.actor_id = :userid]] GROUP BY DATE(created_at)) AS pulls
+            ON DATE(pulls.created_at) = DATE(coms.created_at)
+
+            LEFT JOIN (SELECT issues.created_at AS created_at, COUNT(*) AS count FROM issues WHERE issues.repo_id = :repoid[[ AND issues.reporter_id = :userid]] GROUP BY DATE(created_at)) AS iss
+            ON DATE(iss.created_at) = DATE(coms.created_at)
+
+            LEFT JOIN (SELECT commit_comments.created_at AS created_at, COUNT(*) AS count FROM commit_comments JOIN project_commits ON project_commits.commit_id = commit_comments.commit_id WHERE project_commits.project_id = :repoid[[ AND commit_comments.user_id = :userid]] GROUP BY DATE(commit_comments.created_at)) AS comcoms
+            ON DATE(comcoms.created_at) = DATE(coms.created_at)
+
+            LEFT JOIN (SELECT pull_request_comments.created_at AS created_at, COUNT(*) AS count FROM pull_request_comments JOIN pull_requests ON pull_request_comments.pull_request_id = pull_requests.id WHERE pull_requests.base_repo_id = :repoid[[ AND pull_request_comments.user_id = :userid]] GROUP BY DATE(pull_request_comments.created_at)) AS pullscoms
+            ON DATE(pullscoms.created_at) = DATE(coms.created_at)
+
+            LEFT JOIN (SELECT issue_comments.created_at AS created_at, COUNT(*) AS count FROM issue_comments JOIN issues ON issue_comments.issue_id = issues.id WHERE issues.repo_id = :repoid[[ AND issue_comments.user_id = :userid]] GROUP BY DATE(issue_comments.created_at)) AS isscoms
+            ON DATE(isscoms.created_at) = DATE(coms.created_at)
+
+            GROUP BY WEEK(coms.created_at)
+            ORDER BY DATE(coms.created_at)
+        """
+
+        if (userid is not None and len(userid) > 0):
+            rawContributionsSQL = rawContributionsSQL.replace('[[', '')
+            rawContributionsSQL = rawContributionsSQL.replace(']]', '')
+            parameterized = s.sql.text(rawContributionsSQL)
+            return pd.read_sql(parameterized, self.db, params={"repoid": str(repoid), "userid": str(userid)})
+        else:
+            rawContributionsSQL = re.sub(r'\[\[.+?\]\]', '', rawContributionsSQL)
+            parameterized = s.sql.text(rawContributionsSQL)
+            pretotal = pd.read_sql(parameterized, self.db, params={"repoid": str(repoid)}).fillna(0)
+            pretotal['total'] = pretotal.commits + pretotal.pull_requests + pretotal.issues + pretotal.commit_comments + pretotal.pull_request_comments + pretotal.issue_comments
+            pretotal = pretotal[['date', 'total']].copy()
+            return pretotal
+
+
     def contributor_breadth(self, repoid):
         """
-        Timeseries of all the commits on a repo
+        Timeseries of all the contributions to a project, optionally limited to a specific user
 
-        :param repoid: The id of the project in the projects table. Use repoid() to get this.
-        :return: DataFrame with commits/day
+        :param repoid: The id of the project in the projects table.
+        :param userid: The id of user if you want to limit the contributions to a specific user.
+        :return: DataFrame with all of the contributions seperated by day.
         """
-        contributor_breadthSQL = s.sql.text(self.__single_table_count_by_date('commits'))
-        return pd.read_sql(contributor_breadthSQL, self.db, params={"repoid": str(repoid)})
+        contributor_breadthSQL = """
+            SELECT
+            	DATE(memcom.date) AS "date" ,
+            	memcom.num_commits AS memcommits ,
+            	nonmemcom.num_commits AS nonmemcommits ,
+                nonmemcom.num_commits / memcom.num_commits AS ratio
+            FROM
+            	(
+            		SELECT
+            			DATE(commits.created_at) AS "date" ,
+            			count(commits.id) AS num_commits
+            		FROM
+            			commits
+            		JOIN users ON commits.author_id = users.id
+            		JOIN project_members ON project_members.repo_id = :repoid
+            		WHERE
+            			project_members.user_id = commits.author_id
+            		GROUP BY
+            			DATE(commits.created_at)
+            	) AS memcom
+            JOIN(
+            	SELECT
+            		DATE(commits.created_at) AS "date" ,
+            		count(commits.id) AS num_commits
+            	FROM
+            		commits
+            	JOIN projects ON commits.project_id = projects.id
+            	JOIN users ON users.id = commits.author_id
+            	WHERE
+            		(projects.id , users.id) NOT IN(
+            			SELECT
+            				repo_id ,
+            				user_id
+            			FROM
+            				project_members
+            		)
+            	AND projects.id = :repoid
+            	GROUP BY
+            		DATE(commits.created_at)
+            ) AS nonmemcom ON memcom.date = nonmemcom.date
+            GROUP BY
+            	WEEK(memcom.date)
+            ORDER BY
+            	DATE(memcom.date)
+        """
+
+        parameterized = s.sql.text(contributor_breadthSQL)
+        contributor_breadthDF = pd.read_sql(parameterized, self.db, params={"repoid": str(repoid)}).fillna(0)
+
+
+        return contributor_breadthDF

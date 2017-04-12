@@ -171,3 +171,21 @@ GHDataAPIClient.prototype.contributors = function (params) {
 GHDataAPIClient.prototype.committerLocations = function (params) {
   return this.get('commits/locations', params);
 };
+
+/**
+ * Community Activity timeseries
+ * @param {Object} params - Query string params to pass to the API
+ * @returns {Promise} Resolves with commits timeseries object
+ */
+GHDataAPIClient.prototype.community_activity = function (params) {
+  return this.get('timeseries/community_activity', params);
+};
+
+/**
+ * Contributor Breadth timeseries
+ * @param {Object} params - Query string params to pass to the API
+ * @returns {Promise} Resolves with commits timeseries object
+ */
+GHDataAPIClient.prototype.contributor_breadth = function (params) {
+  return this.get('timeseries/contributor_breadth', params);
+};

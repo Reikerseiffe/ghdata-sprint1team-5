@@ -1267,6 +1267,9 @@ there.
 .badge.healthy {
   background-color: #595;
 }
+.badge.unhealthy {
+    background-color: #f44b42;
+}
 
 .report section {
   margin-bottom: 3rem;
