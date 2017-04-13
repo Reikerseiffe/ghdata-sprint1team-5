@@ -189,3 +189,7 @@ GHDataAPIClient.prototype.community_activity = function (params) {
 GHDataAPIClient.prototype.contributor_breadth = function (params) {
   return this.get('timeseries/contributor_breadth', params);
 };
+
+GHDataAPIClient.prototype.distribution = function (params) {
+  return this.get('timeseries/distribution', params);
+};

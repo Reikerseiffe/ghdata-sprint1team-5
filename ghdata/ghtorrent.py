@@ -441,3 +441,22 @@ class GHTorrent(object):
 
 
         return contributor_breadthDF
+
+
+    def distribution(self, repoid):
+        """
+        Timeseries of all the contributions to a project, optionally limited to a specific user
+
+        :param repoid: The id of the project in the projects table.
+        :param userid: The id of user if you want to limit the contributions to a specific user.
+        :return: DataFrame with all of the contributions seperated by day.
+        """
+        distributionSQL = """
+            
+        """
+
+        parameterized = s.sql.text(distribution)
+        distributionDF = pd.read_sql(parameterized, self.db, params={"repoid": str(repoid)}).fillna(0)
+
+
+        return distributionDF

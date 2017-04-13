@@ -513,6 +513,58 @@ def community_activity(owner, repo):
 app.route('/{}/<owner>/<repo>/timeseries/contributor_breadth'.format(GHDATA_API_VERSION))(flaskify_ghtorrent(app, ghtorrent.contributor_breadth))
 
 
+#######################
+# Distribution of Work #
+#######################
+
+"""
+@api {get} /:owner/:repo/distribution Contributions by Week
+@apiName ContributorBreadthByWeek
+@apiGroup Timeseries
+
+@apiParam {String} owner Username of the owner of the GitHub repository
+@apiParam {String} repo Name of the GitHub repository
+@apiParam (String) user Limit results to the given user's contributions
+
+@apiSuccessExample {json} Success-Response:
+                   [
+                        {
+                            "date": "2015-01-01T00:00:00.000Z",
+                            "commits": 37.0,
+                            "pull_requests": null,
+                            "issues": null,
+                            "commit_comments": 7.0,
+                            "pull_request_comments": 8.0,
+                            "issue_comments": 17.0
+                        },
+                        {
+                            "date": "2015-01-08T00:00:00.000Z",
+                            "commits": 68.0,
+                            "pull_requests": null,
+                            "issues": 12.0,
+                            "commit_comments": 18.0,
+                            "pull_request_comments": 13.0,
+                            "issue_comments": 28.0
+                        }
+                    ]
+"""
+"""
+@app.route('/{}/<owner>/<repo>/community_activity'.format(GHDATA_API_VERSION))
+def community_activity(owner, repo):
+    repoid = ghtorrent.repoid(owner=owner, repo=repo)
+    user = request.args.get('user')
+    if (user):
+        userid = ghtorrent.userid(username=user)
+        contribs = ghtorrent.community_activity(repoid=repoid, userid=userid)
+    else:
+        contribs = ghtorrent.community_activity(repoid=repoid)
+    return Response(response=contribs,
+                    status=200,
+                    mimetype="application/json")
+"""
+app.route('/{}/<owner>/<repo>/timeseries/distribution'.format(GHDATA_API_VERSION))(flaskify_ghtorrent(app, ghtorrent.distribution))
+
+
 
 
 if (DEBUG):

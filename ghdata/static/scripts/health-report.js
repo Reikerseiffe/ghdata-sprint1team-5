@@ -136,6 +136,21 @@ GHDataReport.prototype.buildReport = function () {
         target: '#contributor_breadth-over-time'
       });
     });
+
+    this.api.distribution().then(function (distribution) {
+      MG.data_graphic({
+        title: "Distribution of Work/Month",
+        data: MG.convert.date(distribution, 'date', '%Y-%m-%dT%H:%M:%S.%LZ'),
+        chart_type: 'point',
+        least_squares: true,
+        full_width: true,
+        height: 300,
+        color_range: ['#aaa'],
+        x_accessor: 'date',
+        y_accessor: 'ratio',
+        target: '#distribution-over-time'
+      });
+    });
   }
 };
 
