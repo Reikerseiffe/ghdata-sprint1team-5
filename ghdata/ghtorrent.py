@@ -465,7 +465,7 @@ class GHTorrent(object):
             		FROM
             			commits
             		WHERE
-            			project_id = 78852
+            			project_id = :repoid
             		GROUP BY
             			commits.committer_id ,
             			year(commits.created_at) ,
