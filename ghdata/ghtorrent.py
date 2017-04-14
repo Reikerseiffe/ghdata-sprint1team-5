@@ -455,7 +455,7 @@ class GHTorrent(object):
             SELECT
             	result.date AS "date" ,
             	avg(result.num_commits) AS avg_commits ,
-	            sum(result.num_commits) AS sum_commits
+            	sum(result.num_commits) AS sum_commits
             FROM
             	(
             		SELECT
@@ -465,15 +465,17 @@ class GHTorrent(object):
             		FROM
             			commits
             		WHERE
-            			project_id = :repoid
+            			project_id = 78852
             		GROUP BY
             			commits.committer_id ,
+            			year(commits.created_at) ,
             			month(commits.created_at)
             		ORDER BY
             			date(commits.created_at) ,
             			commits.committer_id
             	) result
             GROUP BY
+            	year(result.date) ,
             	month(result.date)
         """
 
