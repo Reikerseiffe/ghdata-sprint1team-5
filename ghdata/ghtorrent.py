@@ -452,11 +452,38 @@ class GHTorrent(object):
         :return: DataFrame with all of the contributions seperated by day.
         """
         distributionSQL = """
-            
+            SELECT
+            	result.date AS "date" ,
+            	avg(result.num_commits) AS avg_commits ,
+	            sum(result.num_commits) AS sum_commits
+            FROM
+            	(
+            		SELECT
+            			commits.created_at AS "date" ,
+            			commits.committer_id AS commiter ,
+            			count(commits.committer_id) AS num_commits
+            		FROM
+            			commits
+            		WHERE
+            			project_id = :repoid
+            		GROUP BY
+            			commits.committer_id ,
+            			month(commits.created_at)
+            		ORDER BY
+            			date(commits.created_at) ,
+            			commits.committer_id
+            	) result
+            GROUP BY
+            	month(result.date)
         """
 
-        parameterized = s.sql.text(distribution)
+        parameterized = s.sql.text(distributionSQL)
         distributionDF = pd.read_sql(parameterized, self.db, params={"repoid": str(repoid)}).fillna(0)
+
+        distributionDF['ratio'] = distributionDF.avg_commits / distributionDF.sum_commits
+
+
+
 
 
         return distributionDF
